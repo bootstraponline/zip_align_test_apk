@@ -1,4 +1,8 @@
 apply plugin: 'com.android.application'
+import com.android.build.gradle.tasks.ZipAlign
+import com.android.builder.core.AndroidBuilder
+
+def appDebugTestUnalignedApk = ''
 
 android {
     compileSdkVersion 21
@@ -19,6 +23,47 @@ android {
     lintOptions {
         abortOnError false
     }
+
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            // test apk doesn't appear in the outputs.
+            // find app apk then guess the aligned apk path.
+            // http://stackoverflow.com/a/26406637
+            def outputFile = output.outputFile
+            if (appDebugTestUnalignedApk == '' && outputFile != null && outputFile.name.endsWith('-debug.apk')) {
+                appDebugTestUnalignedApk = outputFile.path.replace('.apk', '-test-unaligned.apk')
+            }
+        }
+    }
+
+    // app-debug-test-unaligned.apk
+    // app-debug-unaligned.apk
+    // app-debug.apk
+    // http://stackoverflow.com/questions/22743663/in-android-gradle-how-to-define-a-task-that-only-runs-when-building-specific-bui
+    tasks.whenTaskAdded { task ->
+        if (task.name == 'assembleDebugTest') {
+            task.dependsOn printName
+        }
+    }
+}
+
+task printName << {
+    println "!!!! print name invoked ${appDebugTestUnalignedApk}"
+    def zipAlignTask = project.tasks.create('zipalignDebugTest', ZipAlign)
+    def appDebugTestApk = appDebugTestUnalignedApk.replace('-test-unaligned.apk', '-test.apk')
+
+    println "::::::  inputFile: ${appDebugTestUnalignedApk}"
+    println ":::::: outputFile: ${appDebugTestApk}"
+    // class org.gradle.api.DefaultTask_Decorated
+    // https://github.com/bootstraponline/tools_base/blob/d4f069cdc3d5e47649f14c8185e47b4ebc06a2c0/build-system/gradle-core/src/main/groovy/com/android/build/gradle/internal/tasks/BaseTask.groovy#L25
+    println ":::::: class: ${printName.class}"
+
+    zipAlignTask.inputFile = new File(appDebugTestUnalignedApk)
+    zipAlignTask.outputFile = new File(appDebugTestApk)
+    // zipAlignTask.zipAlignExe = new File(androidBuilder.targetInfo?.buildTools?.getPath(ZIP_ALIGN))
+
+    zipAlignTask.zipAlignExe = new File(printName.getMethod('getBuilder').invoke().targetInfo?.buildTools?.getPath(ZIP_ALIGN))
+    zipAlignTask.execute()
 }
 
 dependencies {
