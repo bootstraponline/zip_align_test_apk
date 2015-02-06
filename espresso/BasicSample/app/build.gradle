@@ -72,10 +72,14 @@ task printName << {
     def sdkManager = SdkManager.createManager(new LocalSdk(new File(sdkFolder)))
     def latestBuildToolFullRevision = sdkManager.getLatestBuildTool().getRevision()
     def buildToolInfo = sdkManager.getBuildTool(latestBuildToolFullRevision)
-    def zipAlign = buildToolInfo.getPath(BuildToolInfo.PathId.ZIP_ALIGN)
-    println ":::::: zipAlign: ${zipAlign}"
+    def zipAlign = new File(buildToolInfo.getPath(BuildToolInfo.PathId.ZIP_ALIGN))
+    println ":::::: zipAlign: ${zipAlign.absolutePath}"
 
-    zipAlignTask.zipAlignExe = new File(zipAlign)
+    if (!zipAlign.exists()) {
+        throw new RuntimeException("zipAlign must exist! Not found in latest build tool revision.")
+    }
+
+    zipAlignTask.zipAlignExe = zipAlign
     zipAlignTask.execute()
 }
 
