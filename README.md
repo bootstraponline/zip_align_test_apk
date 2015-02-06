@@ -1,6 +1,8 @@
 Android testing samples
 ===================================
 
+- Fork of [https://github.com/googlesamples/android-testing](https://github.com/googlesamples/android-testing)
+- [build.gradle](espresso/BasicSample/app/build.gradle) with modifications to zip align the test apk
 
 A collection of samples demonstrating different frameworks and techniques for automated testing.
 
