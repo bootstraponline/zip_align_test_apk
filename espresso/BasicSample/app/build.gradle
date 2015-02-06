@@ -1,6 +1,8 @@
 apply plugin: 'com.android.application'
 import com.android.build.gradle.tasks.ZipAlign
-import com.android.builder.core.AndroidBuilder
+import com.android.sdklib.SdkManager
+import com.android.sdklib.BuildToolInfo
+import com.android.sdklib.repository.local.LocalSdk
 
 /** zipalign executable (with extension for the current OS) */
 import static com.android.SdkConstants.FN_ZIPALIGN
@@ -50,6 +52,7 @@ android {
     }
 }
 
+// ./gradlew assembleDebugTest
 task printName << {
     println "!!!! print name invoked ${appDebugTestUnalignedApk}"
     def zipAlignTask = project.tasks.create('zipalignDebugTest', ZipAlign)
@@ -64,10 +67,12 @@ task printName << {
     zipAlignTask.inputFile = new File(appDebugTestUnalignedApk)
     zipAlignTask.outputFile = new File(appDebugTestApk)
 
-    def BUILD_TOOLS_VERSION = '21.1.2'
+    // based on https://github.com/bootstraponline/tools_base/blob/d4f069cdc3d5e47649f14c8185e47b4ebc06a2c0/build-system/integration-test/src/test/groovy/com/android/build/gradle/integration/common/utils/SdkHelper.java#L71
     def sdkFolder = project.getPlugins().getPlugin('com.android.application').sdkFolder.absolutePath
-    def zipAlign = sdkFolder + File.separator + 'build-tools' + File.separator + BUILD_TOOLS_VERSION + File.separator + FN_ZIPALIGN
-
+    def sdkManager = SdkManager.createManager(new LocalSdk(new File(sdkFolder)))
+    def latestBuildToolFullRevision = sdkManager.getLatestBuildTool().getRevision()
+    def buildToolInfo = sdkManager.getBuildTool(latestBuildToolFullRevision)
+    def zipAlign = buildToolInfo.getPath(BuildToolInfo.PathId.ZIP_ALIGN)
     println ":::::: zipAlign: ${zipAlign}"
 
     zipAlignTask.zipAlignExe = new File(zipAlign)
