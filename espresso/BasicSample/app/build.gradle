@@ -2,6 +2,9 @@ apply plugin: 'com.android.application'
 import com.android.build.gradle.tasks.ZipAlign
 import com.android.builder.core.AndroidBuilder
 
+/** zipalign executable (with extension for the current OS) */
+import static com.android.SdkConstants.FN_ZIPALIGN
+
 def appDebugTestUnalignedApk = ''
 
 android {
@@ -60,9 +63,14 @@ task printName << {
 
     zipAlignTask.inputFile = new File(appDebugTestUnalignedApk)
     zipAlignTask.outputFile = new File(appDebugTestApk)
-    // zipAlignTask.zipAlignExe = new File(androidBuilder.targetInfo?.buildTools?.getPath(ZIP_ALIGN))
 
-    zipAlignTask.zipAlignExe = new File(printName.getMethod('getBuilder').invoke().targetInfo?.buildTools?.getPath(ZIP_ALIGN))
+    def BUILD_TOOLS_VERSION = '21.1.2'
+    def sdkFolder = project.getPlugins().getPlugin('com.android.application').sdkFolder.absolutePath
+    def zipAlign = sdkFolder + File.separator + 'build-tools' + File.separator + BUILD_TOOLS_VERSION + File.separator + FN_ZIPALIGN
+
+    println ":::::: zipAlign: ${zipAlign}"
+
+    zipAlignTask.zipAlignExe = new File(zipAlign)
     zipAlignTask.execute()
 }
 
@@ -75,3 +83,4 @@ dependencies {
     androidTestCompile 'com.android.support.test:testing-support-lib:0.1'
     androidTestCompile 'com.android.support.test.espresso:espresso-core:2.0'
 }
+
